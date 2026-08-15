@@ -1,0 +1,19 @@
+{
+    "connections": [
+        {
+            "name": "Irancell",
+            "interface": "enp4s0",
+            "gateway": "192.168.2.1",
+            "priority": 2
+        },
+        {
+            "name": "TCI",
+            "interface": "wlx1cbfce2def95",
+            "gateway": "192.168.1.1",
+            "priority": 1
+        }
+    ],
+
+    "mode": "auto",
+    "active": "TCI"
+}
