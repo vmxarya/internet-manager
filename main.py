@@ -42,11 +42,11 @@ while True:
 
     "TCI": check_quality(
           "wlx1cbfce2def95"
-     ),
+     )["score"],
 
      "Irancell": check_quality(
           "enp4s0"
-     )
+     )["score"]
     }
 
 
