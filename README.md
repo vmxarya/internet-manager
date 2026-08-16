@@ -19,6 +19,34 @@ The main goal is not only keeping the internet online, but improving real browse
 - Route switching support
 - Basic API foundation
 
+## Run
+
+Clone the repository:
+
+```bash
+git clone https://github.com/vmxarya/internet-manager.git
+cd internet-manager
+```
+
+Create and activate the virtual environment:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+Run Internet Manager:
+
+```bash
+python main.py
+```
+
+Stop the program with:
+
+```text
+Ctrl + C
+```
+
 ## Current Architecture
 
 ```
