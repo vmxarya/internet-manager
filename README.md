@@ -2,6 +2,8 @@
 
 A Python-based smart multi-WAN failover manager designed to improve internet reliability by monitoring multiple connections and automatically switching between them when needed.
 
+**Now with Windows support!** 🎉
+
 ## Overview
 
 Internet Manager helps manage multiple ISP connections using a smart failover strategy.
@@ -17,34 +19,80 @@ The main goal is not only keeping the internet online, but improving real browse
 - Automatic ISP failover decision logic
 - Automatic return to primary connection
 - Route switching support
+- **Cross-platform support (Linux & Windows)**
 - Basic API foundation
 
-## Run
+## Quick Start
 
-Clone the repository:
+### Linux
 
 ```bash
 git clone https://github.com/vmxarya/internet-manager.git
 cd internet-manager
-```
-
-Create and activate the virtual environment:
-
-```bash
 python3 -m venv venv
 source venv/bin/activate
-```
-
-Run Internet Manager:
-
-```bash
+pip install -r requirements.txt
 python main.py
 ```
 
-Stop the program with:
+### Windows
 
-```text
-Ctrl + C
+```bash
+git clone https://github.com/vmxarya/internet-manager.git
+cd internet-manager
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+python main.py
+```
+
+**Note:** For Windows route switching, run with Administrator privileges. See [WINDOWS_SETUP.md](WINDOWS_SETUP.md) for detailed setup.
+
+## Platform Support
+
+### Linux
+- Full support for interface-specific routing
+- Uses `ip route` for route management
+- Interface-specific ping testing
+
+### Windows
+- Full support for multi-WAN failover
+- Uses `netsh` for route management
+- Quality testing via default gateway
+- Requires Administrator privileges for route switching
+
+See [WINDOWS_SETUP.md](WINDOWS_SETUP.md) for Windows-specific configuration and troubleshooting.
+
+## Configuration
+
+Edit `main.py` to configure your connections:
+
+### Linux Configuration
+```python
+connections = {
+    "TCI": {
+        "gateway": "192.168.1.1",
+        "interface": "wlx1cbfce2def95"
+    },
+    "Irancell": {
+        "gateway": "192.168.2.1",
+        "interface": "enp4s0"
+    }
+}
+```
+
+### Windows Configuration
+```python
+connections = {
+    "Primary": {
+        "gateway": "192.168.1.1",
+        "interface": "Ethernet"
+    },
+    "Backup": {
+        "gateway": "192.168.2.1",
+        "interface": "WiFi"
+    }
+}
 ```
 
 ## Current Architecture
@@ -53,10 +101,14 @@ Ctrl + C
 Internet Manager
 │
 ├── Core Engine (Python)
-│   ├── Network detection
+│   ├── Network detection (cross-platform)
 │   ├── Quality monitoring
 │   ├── Decision engine
-│   └── Router control
+│   └── Router control (platform-specific)
+│
+├── Platform Adapters
+│   ├── Linux (quality_*.py, router.py, network.py)
+│   └── Windows (quality_windows.py, router_windows.py, network_windows.py)
 │
 ├── API
 │   └── Status interface
@@ -69,14 +121,14 @@ Internet Manager
 - Primary connection: normal daily usage
 - Backup connection: instant recovery when the primary connection performs poorly
 - Stable browsing experience instead of simple ping-based switching
-- Cross-platform support (Linux first, Windows planned)
+- Cross-platform support (Linux and Windows)
 
 ## Roadmap
 
-- [x] v0.1.0 Prototype
-- [ ] v0.2.0 Web Dashboard
-- [ ] v0.3.0 Background Service Mode
-- [ ] v0.4.0 Windows Support
+- [x] v0.1.0 Prototype (Linux)
+- [x] v0.2.0 Windows Support
+- [ ] v0.3.0 Web Dashboard
+- [ ] v0.4.0 Background Service Mode
 - [ ] v0.5.0 Patience / Fast Track Switching Modes
 - [ ] v1.0.0 Stable Release
 
@@ -84,9 +136,26 @@ Internet Manager
 
 Built with:
 
-- Python
-- Linux networking tools
+- Python 3.8+
+- Cross-platform libraries (psutil, requests)
+- Native OS commands (netsh for Windows, ip for Linux)
 - Git
+
+## Troubleshooting
+
+### Windows
+- See [WINDOWS_SETUP.md](WINDOWS_SETUP.md) for detailed Windows troubleshooting
+- Ensure running with Administrator privileges
+- Verify network adapter names with `ipconfig`
+
+### Linux
+- Check network interfaces: `ip link show`
+- View routing table: `ip route show`
+- Test ping: `ping -I <interface> 8.8.8.8`
+
+## Stop the program
+
+Press `Ctrl + C` to stop.
 
 ## License
 

@@ -1,213 +1,167 @@
 import subprocess
 import time
 import requests
+import platform
 
-
-def ping_test(interface, host="8.8.8.8"):
-    """
-    Test latency and packet loss
-    """
-
-    result = subprocess.run(
-        [
-            "ping",
-            "-I",
-            interface,
-            "-c",
-            "4",
-            host
-        ],
-        capture_output=True,
-        text=True
+# Import platform-specific implementations
+if platform.system() == "Windows":
+    from .quality_windows import (
+        ping_test_windows as ping_test,
+        website_test_windows as website_test,
+        calculate_score,
+        check_quality_windows as check_quality
     )
+else:
+    # Linux implementation
+    def ping_test(interface, host="8.8.8.8"):
+        """
+        Test latency and packet loss (Linux version)
+        """
 
-    output = result.stdout
-
-    if result.returncode != 0:
-        return {
-            "online": False,
-            "latency": None,
-            "loss": 100
-        }
-
-
-    latency = None
-    loss = None
-
-
-    for line in output.split("\n"):
-
-        if "packet loss" in line:
-            loss = int(
-                line.split("%")[0]
-                .split()[-1]
-            )
-
-        if "avg" in line:
-            latency = float(
-                line.split("=")[1]
-                .split("/")[1]
-            )
-
-
-    return {
-        "online": True,
-        "latency": latency,
-        "loss": loss
-    }
-
-
-
-def website_test(interface, url):
-
-    start = time.time()
-
-    try:
-
-        response = requests.get(
-            url,
-            timeout=5
+        result = subprocess.run(
+            [
+                "ping",
+                "-I",
+                interface,
+                "-c",
+                "4",
+                host
+            ],
+            capture_output=True,
+            text=True
         )
 
-        total = time.time() - start
+        output = result.stdout
 
+        if result.returncode != 0:
+            return {
+                "online": False,
+                "latency": None,
+                "loss": 100
+            }
+
+        latency = None
+        loss = None
+
+        for line in output.split("\n"):
+
+            if "packet loss" in line:
+                loss = int(
+                    line.split("%")[0]
+                    .split()[-1]
+                )
+
+            if "avg" in line:
+                latency = float(
+                    line.split("=")[1]
+                    .split("/")[1]
+                )
 
         return {
-            "url": url,
-            "status": response.status_code,
-            "time": round(total, 3)
+            "online": True,
+            "latency": latency,
+            "loss": loss
         }
 
+    def website_test(interface, url):
 
-    except:
+        start = time.time()
 
-        return {
-            "url": url,
-            "status": "failed",
-            "time": None
-        }
+        try:
 
+            response = requests.get(
+                url,
+                timeout=5
+            )
 
+            total = time.time() - start
 
-def calculate_score(ping, websites):
+            return {
+                "url": url,
+                "status": response.status_code,
+                "time": round(total, 3)
+            }
 
-    score = 100
+        except:
 
-    # Ping is useful but not critical
-    if ping["latency"]:
+            return {
+                "url": url,
+                "status": "failed",
+                "time": None
+            }
 
-        if ping["latency"] > 100:
-            score -= 10
+    def calculate_score(ping, websites):
 
-        if ping["latency"] > 200:
-            score -= 20
+        score = 100
 
+        # Ping is useful but not critical
+        if ping["latency"]:
 
-    # Packet loss matters only if ping works
-    if ping["online"] and ping["loss"]:
+            if ping["latency"] > 100:
+                score -= 10
 
-        score -= ping["loss"] * 0.3
+            if ping["latency"] > 200:
+                score -= 20
 
+        # Packet loss matters only if ping works
+        if ping["online"] and ping["loss"]:
 
-    # Website quality
-    failed = 0
-    slow = 0
+            score -= ping["loss"] * 0.3
 
+        # Website quality
+        failed = 0
+        slow = 0
 
-    for site in websites:
+        for site in websites:
 
-        if site["status"] == "failed":
-            failed += 1
+            if site["status"] == "failed":
+                failed += 1
 
-        elif site["time"] > 2:
-            slow += 1
+            elif site["time"] > 2:
+                slow += 1
 
+        score -= failed * 30
+        score -= slow * 10
 
-    score -= failed * 30
-    score -= slow * 10
+        if score < 0:
+            score = 0
 
+        return round(score)
 
-    if score < 0:
-        score = 0
+    def check_quality(interface):
 
+        ping = ping_test(interface)
 
-    return round(score)
+        urls = [
+            "https://www.google.com",
+            "https://github.com",
+            "https://openai.com"
+        ]
 
-def check_quality(interface):
+        websites = []
 
-    ping = ping_test(interface)
+        for url in urls:
+            websites.append(
+                website_test(interface, url)
+            )
 
-    urls = [
-        "https://www.google.com",
-        "https://github.com",
-        "https://openai.com"
-    ]
-
-    websites = []
-
-    for url in urls:
-        websites.append(
-            website_test(interface, url)
+        score = calculate_score(
+            ping,
+            websites
         )
 
-
-    score = calculate_score(
-        ping,
-        websites
-    )
-
-    return score
+        return score
 
 
 if __name__ == "__main__":
 
-    interface = "wlx1cbfce2def95"
-
-    print("Testing:", interface)
-
-    ping = test_ping(interface)
-
-    websites = test_websites(interface)
-
-    score = calculate_score(
-        ping,
-        websites
-    )
-
-    print("\nInternet Quality Score:")
-    print(score)
-
-
-    sites = [
-
-        "https://www.google.com",
-        "https://github.com",
-        "https://openai.com"
-
-    ]
-
-
-    results = []
-
-
-    for site in sites:
-
-        result = website_test(
-            interface,
-            site
-        )
-
-        results.append(result)
-
-        print(result)
-
-
-
-    score = calculate_score(
-        ping,
-        results
-    )
-
+    if platform.system() == "Windows":
+        print("Testing quality on Windows...")
+        score = check_quality()
+    else:
+        interface = "wlx1cbfce2def95"
+        print("Testing:", interface)
+        score = check_quality(interface)
 
     print("\nInternet Quality Score:")
     print(score)
